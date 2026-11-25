@@ -75,4 +75,9 @@ OWASP Dependency-Check проверил восемь пакетов, включ�
 
 #figure(image("figures/dependency-check.png", width: 100%), caption: [Отчёт OWASP Dependency-Check из #ref(repo + "/actions/runs/45585964740/job/139107535219", [запуска №3]).])
 
-#ref(repo, [Репозиторий с кодом и README]) #h(6pt) · #h(6pt) #ref(run, [Запуск GitHub Actions для этой версии отчёта])
+= Вывод
+
+Проверил API под двумя учётными записями. Каждый пользователь видел только свои заметки, а с просроченным токеном сервер возвращал `401`. На примере PyJWT увидел, зачем сверять пакет из карточки CVE с библиотекой, установленной в проекте.
+
+- #ref(repo, [Репозиторий с кодом и README])
+- #ref(run, [Успешный запуск GitHub Actions])

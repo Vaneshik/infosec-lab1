@@ -23,7 +23,8 @@ curl "$url/api/data" -H "Authorization: Bearer $token"
 
 `POST /auth/login` выдаёт JWT на 30 минут. Для `POST /api/data` (добавить заметку) и `GET /api/data` (свои заметки) сервер проверяет подпись HS256 и срок токена. В SQLite хранится scrypt-хэш пароля с солью. Запросы передают значения через `?`, а перед выдачей текста `html.escape` экранирует HTML-символы.
 
-[Отчёт в PDF](report1.pdf) · [Проверки в GitHub Actions](https://github.com/Vaneshik/infosec-lab1/actions/workflows/ci.yml?query=status%3Asuccess)
+- [Отчёт в PDF](report1.pdf)
+- [Проверки в GitHub Actions](https://github.com/Vaneshik/infosec-lab1/actions/workflows/ci.yml?query=status%3Asuccess)
 
 [![Bandit — результат анализа приложения](figures/bandit.png)](https://github.com/Vaneshik/infosec-lab1/actions/runs/45585964740/job/139107535760)
 
