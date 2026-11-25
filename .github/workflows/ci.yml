@@ -87,3 +87,18 @@ jobs:
           name: dependency-check
           path: reports/
           if-no-files-found: error
+
+  report:
+    name: Отчёт в PDF
+    needs: [api, dependencies]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: '0.15.1'
+      - run: typst compile --input "run-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" report1.typ report1.pdf
+      - uses: actions/upload-artifact@v7
+        with:
+          name: report1
+          path: report1.pdf
