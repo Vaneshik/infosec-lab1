@@ -1,0 +1,84 @@
+name: Проверка ЛР1
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API и Bandit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements.txt bandit==1.9.4
+      - run: python -m unittest -v
+      - name: Проверка кода
+        run: |
+          bandit -v app.py | tee bandit.txt
+          {
+            echo '## Bandit'
+            echo 'Статический анализ app.py'
+            echo '~~~text'
+            sed -n '/Code scanned:/,/Files skipped/p' bandit.txt
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
+
+  dependencies:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Скачать пакеты приложения
+        run: |
+          python -m pip download --only-binary=:all: -r requirements.txt -d wheels
+      - name: Дата базы NVD
+        id: nvd
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v5
+        with:
+          path: ~/odc-data
+          key: odc-13-${{ steps.nvd.outputs.day }}
+          restore-keys: odc-13-
+      - name: Проверка зависимостей
+        run: |
+          curl -fsSL --retry 3 https://github.com/dependency-check/DependencyCheck/releases/download/v13.0.0/dependency-check-13.0.0-release.zip -o "$RUNNER_TEMP/odc.zip"
+          unzip -q "$RUNNER_TEMP/odc.zip" -d "$RUNNER_TEMP"
+          "$RUNNER_TEMP/dependency-check/bin/dependency-check.sh" \
+            --project infosec-lab1 --scan wheels --enableExperimental \
+            --data "$HOME/odc-data" --nvdDatafeed 'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{0}.json.gz' \
+            --format HTML --format JSON --out reports --failOnCVSS 9
+      - name: Результат проверки пакетов
+        if: ${{ !cancelled() && hashFiles('reports/dependency-check-report.json') != '' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path("reports/dependency-check-report.json").read_text())
+          packages = {d["fileName"]: d for d in report["dependencies"]}
+          wheels = sorted(p.name for p in Path("wheels").glob("*.whl"))
+          if not wheels or set(wheels) - packages.keys():
+              raise SystemExit("Dependency-Check did not analyze every wheel")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
+              print("## OWASP Dependency-Check", file=out)
+              print(f'Проверено пакетов: **{len(wheels)}**. Источник CVE: NVD.\n', file=out)
+              print("| Пакет | Версия | Найдено уязвимостей |\n|---|---|---:|", file=out)
+              for wheel in wheels:
+                  name, version, *_ = wheel.split("-")
+                  count = len(packages[wheel].get("vulnerabilities", []))
+                  print(f"| {name} | {version} | {count} |", file=out)
+          PY
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: dependency-check
+          path: reports/
+          if-no-files-found: error
