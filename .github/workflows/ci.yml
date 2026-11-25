@@ -50,6 +50,7 @@ jobs:
         run: |
           curl -fsSL --retry 3 https://github.com/dependency-check/DependencyCheck/releases/download/v13.0.0/dependency-check-13.0.0-release.zip -o "$RUNNER_TEMP/odc.zip"
           unzip -q "$RUNNER_TEMP/odc.zip" -d "$RUNNER_TEMP"
+          mkdir -p reports "$HOME/odc-data"
           "$RUNNER_TEMP/dependency-check/bin/dependency-check.sh" \
             --project infosec-lab1 --scan wheels --enableExperimental \
             --data "$HOME/odc-data" --nvdDatafeed 'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{0}.json.gz' \
