@@ -26,6 +26,10 @@ jobs:
             echo '~~~'
           } >> "$GITHUB_STEP_SUMMARY"
         shell: bash
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bandit
+          path: bandit.txt
 
   dependencies:
     name: OWASP Dependency-Check
@@ -64,7 +68,7 @@ jobs:
           from pathlib import Path
 
           report = json.loads(Path("reports/dependency-check-report.json").read_text())
-          packages = {d["fileName"]: d for d in report["dependencies"]}
+          packages = {Path(d["filePath"]).name: d for d in report["dependencies"]}
           wheels = sorted(p.name for p in Path("wheels").glob("*.whl"))
           if not wheels or set(wheels) - packages.keys():
               raise SystemExit("Dependency-Check did not analyze every wheel")
